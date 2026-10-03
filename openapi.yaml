@@ -1,0 +1,1955 @@
+openapi: 3.1.0
+info:
+  title: MetKurd REST API V2
+  version: '2'
+  description: Official MetKurd REST API V2 customer contract. Account/service availability, limits and
+    entitlements depend on the current MetKurd account and plan. Generation is asynchronous. Request schemas
+    describe recommended functional fields; compatibility observations are in docs/contract-notes.md.
+    Apache-2.0 covers repository documentation and sample code only, not the hosted MetKurd API service,
+    models, customer data or generated outputs.
+  license:
+    name: Apache License 2.0
+    identifier: Apache-2.0
+servers:
+- url: https://metkurd.ai/api/v2
+security:
+- BearerAuth: []
+tags:
+- name: Discovery
+- name: Speech
+- name: Voice Clone
+- name: Multi-Speaker
+- name: Speech-to-Text
+- name: Caption
+- name: OCR
+- name: Harakat
+- name: STEM
+- name: Jobs
+- name: Files
+paths:
+  /speech:
+    post:
+      operationId: submit_speech
+      tags:
+      - Speech
+      summary: Submit speech
+      description: Requires v2:speech, current API access and this service entitlement. Use placeholders
+        only after replacing them with your actual discovered IDs. Files are local uploads. See docs/idempotency.md
+        before retrying.
+      x-required-scope: v2:speech
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpeechRequest'
+            example:
+              text: سڵاو لە مێتکوردەوە
+              voice: VOICE_ID
+              model: '2.0'
+              language: ckb
+              storage_mode: temporary
+      responses:
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '429':
+          description: Rate or concurrent job limit exceeded. Retry-After may be absent for concurrency.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Wait time in seconds, when supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '202':
+          description: New generation request accepted; does not wait for completion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+              example:
+                id: JOB_ID
+                status: queued
+                service: speech
+                created_at: '2026-10-03T12:00:00Z'
+                completed_at: null
+                expires_at: '2026-10-04T12:00:00Z'
+                result: null
+        '200':
+          description: Identical accepted replay; same job ID and current state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+  /voice-clone:
+    post:
+      operationId: submit_voice_clone
+      tags:
+      - Voice Clone
+      summary: Submit voice-clone
+      description: Requires v2:voice-clone, current API access and this service entitlement. Use placeholders
+        only after replacing them with your actual discovered IDs. Files are local uploads. See docs/idempotency.md
+        before retrying.
+      x-required-scope: v2:voice-clone
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CloneUploadRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloneSavedRequest'
+            example:
+              text: سڵاو لە مێتکوردەوە
+              model: '2.0'
+              language: ckb
+              storage_mode: temporary
+              reference_id: 123
+      responses:
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '429':
+          description: Rate or concurrent job limit exceeded. Retry-After may be absent for concurrency.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Wait time in seconds, when supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '202':
+          description: New generation request accepted; does not wait for completion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+              example:
+                id: JOB_ID
+                status: queued
+                service: voice-clone
+                created_at: '2026-10-03T12:00:00Z'
+                completed_at: null
+                expires_at: '2026-10-04T12:00:00Z'
+                result: null
+        '200':
+          description: Identical accepted replay; same job ID and current state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+  /transcriptions:
+    post:
+      operationId: submit_transcriptions
+      tags:
+      - Speech-to-Text
+      summary: Submit transcriptions
+      description: Requires v2:transcriptions, current API access and this service entitlement. Use placeholders
+        only after replacing them with your actual discovered IDs. Files are local uploads. See docs/idempotency.md
+        before retrying.
+      x-required-scope: v2:transcriptions
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AudioRequest'
+      responses:
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '429':
+          description: Rate or concurrent job limit exceeded. Retry-After may be absent for concurrency.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Wait time in seconds, when supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '202':
+          description: New generation request accepted; does not wait for completion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+              example:
+                id: JOB_ID
+                status: queued
+                service: transcriptions
+                created_at: '2026-10-03T12:00:00Z'
+                completed_at: null
+                expires_at: '2026-10-04T12:00:00Z'
+                result: null
+        '200':
+          description: Identical accepted replay; same job ID and current state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+  /captions:
+    post:
+      operationId: submit_captions
+      tags:
+      - Caption
+      summary: Submit captions
+      description: Requires v2:captions, current API access and this service entitlement. Use placeholders
+        only after replacing them with your actual discovered IDs. Files are local uploads. See docs/idempotency.md
+        before retrying.
+      x-required-scope: v2:captions
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AudioRequest'
+      responses:
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '429':
+          description: Rate or concurrent job limit exceeded. Retry-After may be absent for concurrency.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Wait time in seconds, when supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '202':
+          description: New generation request accepted; does not wait for completion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+              example:
+                id: JOB_ID
+                status: queued
+                service: captions
+                created_at: '2026-10-03T12:00:00Z'
+                completed_at: null
+                expires_at: '2026-10-04T12:00:00Z'
+                result: null
+        '200':
+          description: Identical accepted replay; same job ID and current state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+  /ocr:
+    post:
+      operationId: submit_ocr
+      tags:
+      - OCR
+      summary: Submit ocr
+      description: Requires v2:ocr, current API access and this service entitlement. Use placeholders
+        only after replacing them with your actual discovered IDs. Files are local uploads. See docs/idempotency.md
+        before retrying.
+      x-required-scope: v2:ocr
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/OcrRequest'
+              description: Array binding requires exports[] or indexed exports[0] field names. See the
+                working multipart examples; some generic generators need this field-name adjustment.
+            encoding:
+              exports:
+                style: form
+                explode: true
+      responses:
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '429':
+          description: Rate or concurrent job limit exceeded. Retry-After may be absent for concurrency.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Wait time in seconds, when supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '202':
+          description: New generation request accepted; does not wait for completion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+              example:
+                id: JOB_ID
+                status: queued
+                service: ocr
+                created_at: '2026-10-03T12:00:00Z'
+                completed_at: null
+                expires_at: '2026-10-04T12:00:00Z'
+                result: null
+        '200':
+          description: Identical accepted replay; same job ID and current state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+  /stem:
+    post:
+      operationId: submit_stem
+      tags:
+      - STEM
+      summary: Submit stem
+      description: Requires v2:stem, current API access and this service entitlement. Use placeholders
+        only after replacing them with your actual discovered IDs. Files are local uploads. See docs/idempotency.md
+        before retrying.
+      x-required-scope: v2:stem
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StemRequest'
+      responses:
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '429':
+          description: Rate or concurrent job limit exceeded. Retry-After may be absent for concurrency.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Wait time in seconds, when supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '202':
+          description: New generation request accepted; does not wait for completion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+              example:
+                id: JOB_ID
+                status: queued
+                service: stem
+                created_at: '2026-10-03T12:00:00Z'
+                completed_at: null
+                expires_at: '2026-10-04T12:00:00Z'
+                result: null
+        '200':
+          description: Identical accepted replay; same job ID and current state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+  /zeta:
+    post:
+      operationId: submit_zeta
+      tags:
+      - Multi-Speaker
+      summary: Submit zeta
+      description: Requires v2:speech, current API access and this service entitlement. Use placeholders
+        only after replacing them with your actual discovered IDs. Files are local uploads. See docs/idempotency.md
+        before retrying.
+      x-required-scope: v2:speech
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZetaRequest'
+            example:
+              segments:
+              - text: سڵاو
+                voice: VOICE_ID
+                language: ckb
+                pause_after_ms: 500
+              - text: بەخێربێن
+                voice: ANOTHER_VOICE_ID
+                language: ckb
+                pause_after_ms: 0
+              storage_mode: temporary
+      responses:
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '429':
+          description: Rate or concurrent job limit exceeded. Retry-After may be absent for concurrency.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Wait time in seconds, when supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '202':
+          description: New generation request accepted; does not wait for completion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+              example:
+                id: JOB_ID
+                status: queued
+                service: zeta
+                created_at: '2026-10-03T12:00:00Z'
+                completed_at: null
+                expires_at: '2026-10-04T12:00:00Z'
+                result: null
+        '200':
+          description: Identical accepted replay; same job ID and current state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+  /theta:
+    post:
+      operationId: submit_theta
+      tags:
+      - Multi-Speaker
+      summary: Submit theta
+      description: Requires v2:voice-clone, current API access and this service entitlement. Use placeholders
+        only after replacing them with your actual discovered IDs. Files are local uploads. See docs/idempotency.md
+        before retrying.
+      x-required-scope: v2:voice-clone
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ThetaRequest'
+            example:
+              segments:
+              - text: سڵاو
+                reference_id: 123
+                language: ckb
+                pause_after_ms: 0
+              storage_mode: temporary
+      responses:
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '429':
+          description: Rate or concurrent job limit exceeded. Retry-After may be absent for concurrency.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Wait time in seconds, when supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '202':
+          description: New generation request accepted; does not wait for completion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+              example:
+                id: JOB_ID
+                status: queued
+                service: theta
+                created_at: '2026-10-03T12:00:00Z'
+                completed_at: null
+                expires_at: '2026-10-04T12:00:00Z'
+                result: null
+        '200':
+          description: Identical accepted replay; same job ID and current state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+  /harakat:
+    post:
+      operationId: submit_harakat
+      tags:
+      - Harakat
+      summary: Submit harakat
+      description: Requires v2:harakat, current API access and this service entitlement. Use placeholders
+        only after replacing them with your actual discovered IDs. Files are local uploads. See docs/idempotency.md
+        before retrying.
+      x-required-scope: v2:harakat
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HarakatRequest'
+            example:
+              text: مرحبا بكم
+              storage_mode: temporary
+      responses:
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '429':
+          description: Rate or concurrent job limit exceeded. Retry-After may be absent for concurrency.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Wait time in seconds, when supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '202':
+          description: New generation request accepted; does not wait for completion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+              example:
+                id: JOB_ID
+                status: queued
+                service: harakat
+                created_at: '2026-10-03T12:00:00Z'
+                completed_at: null
+                expires_at: '2026-10-04T12:00:00Z'
+                result: null
+        '200':
+          description: Identical accepted replay; same job ID and current state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+  /services:
+    get:
+      operationId: get_services
+      tags:
+      - Discovery
+      summary: Read services
+      description: Requires v2:jobs:read. Authenticated persisted-state read; no generation or idempotency
+        key.
+      x-required-scope: v2:jobs:read
+      responses:
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '429':
+          description: Rate or concurrent job limit exceeded. Retry-After may be absent for concurrency.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Wait time in seconds, when supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '200':
+          description: Successful read.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Services'
+  /voices:
+    get:
+      operationId: get_voices
+      tags:
+      - Discovery
+      summary: Read voices
+      description: Requires v2:speech. Authenticated persisted-state read; no generation or idempotency
+        key.
+      x-required-scope: v2:speech
+      responses:
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '429':
+          description: Rate or concurrent job limit exceeded. Retry-After may be absent for concurrency.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Wait time in seconds, when supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '200':
+          description: Successful read.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voices'
+              example:
+                voices:
+                - id: VOICE_ID
+                  name: Voice Name
+  /jobs/{id}:
+    get:
+      operationId: get_job
+      tags:
+      - Jobs
+      summary: Read job
+      description: Requires v2:jobs:read. Authenticated persisted-state read; no generation or idempotency
+        key.
+      x-required-scope: v2:jobs:read
+      responses:
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '429':
+          description: Rate or concurrent job limit exceeded. Retry-After may be absent for concurrency.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Wait time in seconds, when supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '200':
+          description: Successful read.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+              examples:
+                queued:
+                  summary: Synthetic placeholder IDs and illustrative dates; no retention-duration guarantee.
+                  value:
+                    id: JOB_ID
+                    status: queued
+                    service: speech
+                    created_at: '2026-10-03T12:00:00Z'
+                    completed_at: null
+                    expires_at: '2026-10-04T12:00:00Z'
+                    result: null
+                speech_completed:
+                  summary: Synthetic completed speech result; file labels and sizes are illustrative.
+                  value:
+                    id: JOB_ID
+                    status: completed
+                    service: speech
+                    created_at: '2026-10-03T12:00:00Z'
+                    completed_at: '2026-10-03T12:00:10Z'
+                    expires_at: '2026-10-04T12:00:00Z'
+                    result:
+                      files:
+                      - id: FILE_ID
+                        kind: render
+                        mime_type: audio/wav
+                        size_bytes: 96044
+                        expires_at: '2026-10-04T12:00:00Z'
+                        download_url: https://metkurd.ai/api/v2/files/FILE_ID/download
+                voice_clone_completed:
+                  summary: Synthetic completed voice-clone result; file labels and sizes are illustrative.
+                  value:
+                    id: JOB_ID
+                    status: completed
+                    service: voice-clone
+                    created_at: '2026-10-03T12:00:00Z'
+                    completed_at: '2026-10-03T12:00:10Z'
+                    expires_at: '2026-10-04T12:00:00Z'
+                    result:
+                      files:
+                      - id: FILE_ID
+                        kind: render
+                        mime_type: audio/wav
+                        size_bytes: 96044
+                        expires_at: '2026-10-04T12:00:00Z'
+                        download_url: https://metkurd.ai/api/v2/files/FILE_ID/download
+                transcriptions_completed:
+                  summary: Synthetic completed transcriptions result; file labels and sizes are illustrative.
+                  value:
+                    id: JOB_ID
+                    status: completed
+                    service: transcriptions
+                    created_at: '2026-10-03T12:00:00Z'
+                    completed_at: '2026-10-03T12:00:10Z'
+                    expires_at: '2026-10-04T12:00:00Z'
+                    result:
+                      files:
+                      - id: FILE_ID
+                        kind: transcription
+                        mime_type: text/plain; charset=UTF-8
+                        size_bytes: 32
+                        expires_at: '2026-10-04T12:00:00Z'
+                        download_url: https://metkurd.ai/api/v2/files/FILE_ID/download
+                      text: سڵاو
+                captions_completed:
+                  summary: Synthetic completed captions result; file labels and sizes are illustrative.
+                  value:
+                    id: JOB_ID
+                    status: completed
+                    service: captions
+                    created_at: '2026-10-03T12:00:00Z'
+                    completed_at: '2026-10-03T12:00:10Z'
+                    expires_at: '2026-10-04T12:00:00Z'
+                    result:
+                      files:
+                      - id: FILE_ID
+                        kind: caption
+                        mime_type: text/plain; charset=UTF-8
+                        size_bytes: 32
+                        expires_at: '2026-10-04T12:00:00Z'
+                        download_url: https://metkurd.ai/api/v2/files/FILE_ID/download
+                      text: سڵاو
+                      srt: '1
+
+                        00:00:00,000 --> 00:00:01,000
+
+                        سڵاو
+
+                        '
+                      segments:
+                      - start: 0
+                        end: 1
+                        text: سڵاو
+                ocr_completed:
+                  summary: Synthetic completed ocr result; file labels and sizes are illustrative.
+                  value:
+                    id: JOB_ID
+                    status: completed
+                    service: ocr
+                    created_at: '2026-10-03T12:00:00Z'
+                    completed_at: '2026-10-03T12:00:10Z'
+                    expires_at: '2026-10-04T12:00:00Z'
+                    result:
+                      files:
+                      - id: FILE_ID
+                        kind: render
+                        mime_type: text/plain; charset=UTF-8
+                        size_bytes: 32
+                        expires_at: '2026-10-04T12:00:00Z'
+                        download_url: https://metkurd.ai/api/v2/files/FILE_ID/download
+                      text: Extracted text
+                stem_completed:
+                  summary: Synthetic completed stem result; file labels and sizes are illustrative.
+                  value:
+                    id: JOB_ID
+                    status: completed
+                    service: stem
+                    created_at: '2026-10-03T12:00:00Z'
+                    completed_at: '2026-10-03T12:00:10Z'
+                    expires_at: '2026-10-04T12:00:00Z'
+                    result:
+                      files:
+                      - id: FILE_ID
+                        kind: render
+                        mime_type: audio/wav
+                        size_bytes: 96044
+                        expires_at: '2026-10-04T12:00:00Z'
+                        download_url: https://metkurd.ai/api/v2/files/FILE_ID/download
+                zeta_completed:
+                  summary: Synthetic completed zeta result; file labels and sizes are illustrative.
+                  value:
+                    id: JOB_ID
+                    status: completed
+                    service: zeta
+                    created_at: '2026-10-03T12:00:00Z'
+                    completed_at: '2026-10-03T12:00:10Z'
+                    expires_at: '2026-10-04T12:00:00Z'
+                    result:
+                      files:
+                      - id: FILE_ID
+                        kind: render
+                        mime_type: audio/wav
+                        size_bytes: 96044
+                        expires_at: '2026-10-04T12:00:00Z'
+                        download_url: https://metkurd.ai/api/v2/files/FILE_ID/download
+                      segment_count: 2
+                      total_chars: 12
+                      duration: 3.0
+                theta_completed:
+                  summary: Synthetic completed theta result; file labels and sizes are illustrative.
+                  value:
+                    id: JOB_ID
+                    status: completed
+                    service: theta
+                    created_at: '2026-10-03T12:00:00Z'
+                    completed_at: '2026-10-03T12:00:10Z'
+                    expires_at: '2026-10-04T12:00:00Z'
+                    result:
+                      files:
+                      - id: FILE_ID
+                        kind: render
+                        mime_type: audio/wav
+                        size_bytes: 96044
+                        expires_at: '2026-10-04T12:00:00Z'
+                        download_url: https://metkurd.ai/api/v2/files/FILE_ID/download
+                      segment_count: 1
+                      total_chars: 4
+                      duration: 1.5
+                harakat_completed:
+                  summary: Synthetic completed harakat result; file labels and sizes are illustrative.
+                  value:
+                    id: JOB_ID
+                    status: completed
+                    service: harakat
+                    created_at: '2026-10-03T12:00:00Z'
+                    completed_at: '2026-10-03T12:00:10Z'
+                    expires_at: '2026-10-04T12:00:00Z'
+                    result:
+                      files:
+                      - id: FILE_ID
+                        kind: diacritized_text
+                        mime_type: text/plain; charset=UTF-8
+                        size_bytes: 32
+                        expires_at: '2026-10-04T12:00:00Z'
+                        download_url: https://metkurd.ai/api/v2/files/FILE_ID/download
+                      text: مَرْحَبًا
+                      characters: 8
+                      words: 1
+                      lines: 1
+                      chunks: 1
+                failed:
+                  value:
+                    id: JOB_ID
+                    status: failed
+                    service: speech
+                    created_at: '2026-10-03T12:00:00Z'
+                    completed_at: '2026-10-03T12:00:10Z'
+                    expires_at: '2026-10-04T12:00:00Z'
+                    result: null
+                    error:
+                      code: processing_failed
+                      message: Processing failed.
+                expired:
+                  value:
+                    id: JOB_ID
+                    status: completed
+                    service: speech
+                    created_at: '2026-10-03T12:00:00Z'
+                    completed_at: '2026-10-03T12:00:10Z'
+                    expires_at: '2026-10-04T12:00:00Z'
+                    result:
+                      expired: true
+                      files: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Returned public job ID.
+  /references:
+    post:
+      operationId: upload_reference
+      tags:
+      - Voice Clone
+      summary: Upload reusable voice reference
+      description: Requires v2:voice-clone and Theta entitlement. Only multipart file is accepted. No
+        Idempotency-Key or generation job. Stored references use quota and independent retention. Identical
+        active owned content may be reused.
+      x-required-scope: v2:voice-clone
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReferenceUpload'
+      responses:
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '429':
+          description: Rate or concurrent job limit exceeded. Retry-After may be absent for concurrency.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Wait time in seconds, when supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '201':
+          description: Reference available; use the integer reference_id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reference'
+              example:
+                reference_id: 123
+                mime_type: audio/wav
+                size_bytes: 96044
+                expires_at: null
+  /files/{id}/download:
+    get:
+      operationId: download_file
+      tags:
+      - Files
+      summary: Download owned result bytes
+      description: Requires v2:files:download, current API access and available owned result. Expired/missing/inaccessible
+        files return file_not_found. Sends private/no-store cache headers.
+      x-required-scope: v2:files:download
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Public ID from result.files[], not a reusable reference ID.
+      responses:
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '429':
+          description: Rate or concurrent job limit exceeded. Retry-After may be absent for concurrency.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Wait time in seconds, when supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '200':
+          description: Result bytes; actual Content-Type follows the file MIME type.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+            Cache-Control:
+              schema:
+                type: string
+              example: private, no-store
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+            text/plain:
+              schema:
+                type: string
+            '*/*':
+              schema:
+                type: string
+                format: binary
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: MetKurd API key. Required for every operation, including downloads.
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Trimmed nonempty value, at most 128 bytes. New value per logical generation request;
+        preserve exact input/key for retries. Account-wide identity across endpoints and credentials.
+        UUID format is not required.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+      example: YOUR_UNIQUE_REQUEST_ID
+  responses:
+    Error:
+      description: Public HTTP error; see docs/errors.md. Transport/gateway failures may be non-JSON.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: invalid_request
+              message: Check the supplied fields.
+  schemas:
+    SpeechRequest:
+      type: object
+      properties:
+        language:
+          type: string
+          description: Speech/transcription language.
+          enum:
+          - ckb
+          - ar
+          - en
+          default: ckb
+        storage_mode:
+          type: string
+          description: Generation output storage policy. Saved references retain their own policy.
+          enum:
+          - temporary
+          - permanent
+          default: temporary
+        model:
+          type: string
+          enum:
+          - '1.5'
+          - '2.0'
+          default: '2.0'
+          description: Speech generation model. Send the version as a string.
+        text:
+          type: string
+          description: Nonempty after trimming. Account/service character limit applies.
+          minLength: 1
+        voice:
+          type: string
+          description: Allowed ID from GET /voices.
+          minLength: 1
+      required:
+      - text
+      - voice
+    CloneSavedRequest:
+      type: object
+      properties:
+        language:
+          type: string
+          description: Speech/transcription language.
+          enum:
+          - ckb
+          - ar
+          - en
+          default: ckb
+        storage_mode:
+          type: string
+          description: Generation output storage policy. Saved references retain their own policy.
+          enum:
+          - temporary
+          - permanent
+          default: temporary
+        model:
+          type: string
+          enum:
+          - '1.5'
+          - '2.0'
+          default: '2.0'
+          description: Speech generation model. Send the version as a string.
+        text:
+          type: string
+          description: Nonempty after trimming. Account/service character limit applies.
+          minLength: 1
+        reference_text:
+          type:
+          - string
+          - 'null'
+          maxLength: 4000
+          description: Optional reference transcript.
+        reference_id:
+          type: integer
+          description: Active owned reference ID.
+          minimum: 1
+      required:
+      - text
+      - reference_id
+    CloneUploadRequest:
+      type: object
+      properties:
+        language:
+          type: string
+          description: Speech/transcription language.
+          enum:
+          - ckb
+          - ar
+          - en
+          default: ckb
+        storage_mode:
+          type: string
+          description: Generation output storage policy. Saved references retain their own policy.
+          enum:
+          - temporary
+          - permanent
+          default: temporary
+        model:
+          type: string
+          enum:
+          - '1.5'
+          - '2.0'
+          default: '2.0'
+          description: Speech generation model. Send the version as a string.
+        text:
+          type: string
+          description: Nonempty after trimming. Account/service character limit applies.
+          minLength: 1
+        reference_text:
+          type:
+          - string
+          - 'null'
+          maxLength: 4000
+          description: Optional reference transcript.
+        reference_id:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+        file:
+          type: string
+          description: Reference audio up to 20 MiB; FLAC excluded.
+          format: binary
+      required:
+      - text
+      oneOf:
+      - required:
+        - file
+        properties:
+          reference_id:
+            type: 'null'
+      - required:
+        - reference_id
+        properties:
+          reference_id:
+            type: integer
+            minimum: 1
+        not:
+          required:
+          - file
+    AudioRequest:
+      type: object
+      properties:
+        language:
+          type: string
+          description: Speech/transcription language.
+          enum:
+          - ckb
+          - ar
+          - en
+          default: ckb
+        intelligent:
+          oneOf:
+          - type: boolean
+          - type: integer
+            enum:
+            - 0
+            - 1
+          - type: string
+            enum:
+            - '0'
+            - '1'
+          default: false
+          description: JSON boolean or multipart 0/1. Literal strings true/false are not accepted.
+        storage_mode:
+          type: string
+          description: Generation output storage policy. Saved references retain their own policy.
+          enum:
+          - temporary
+          - permanent
+          default: temporary
+        file:
+          type: string
+          description: Audio up to 100 MiB. WAV, MP3, MP4/M4A, AAC, OGG, WebM or FLAC; positive duration
+            required.
+          format: binary
+      required:
+      - file
+    StemRequest:
+      type: object
+      properties:
+        storage_mode:
+          type: string
+          description: Generation output storage policy. Saved references retain their own policy.
+          enum:
+          - temporary
+          - permanent
+          default: temporary
+        file:
+          type: string
+          description: Audio up to 100 MiB. WAV, MP3, MP4/M4A, AAC, OGG, WebM or FLAC; positive duration
+            required.
+          format: binary
+        mode:
+          oneOf:
+          - type: integer
+            enum:
+            - 2
+            - 4
+          - type: string
+            enum:
+            - '2'
+            - '4'
+          description: '2: vocals/accompaniment; 4: vocals/drums/bass/other.'
+      required:
+      - file
+      - mode
+    OcrRequest:
+      type: object
+      properties:
+        intelligent:
+          oneOf:
+          - type: boolean
+          - type: integer
+            enum:
+            - 0
+            - 1
+          - type: string
+            enum:
+            - '0'
+            - '1'
+          default: false
+          description: JSON boolean or multipart 0/1. Literal strings true/false are not accepted.
+        storage_mode:
+          type: string
+          description: Generation output storage policy. Saved references retain their own policy.
+          enum:
+          - temporary
+          - permanent
+          default: temporary
+        file:
+          type: string
+          description: PDF/JPEG/PNG/WebP/BMP/GIF/TIFF, at most 100 MiB.
+          format: binary
+        pages:
+          type: string
+          description: 'Select 1–20 unique pages; all selects the first 20 or fewer. Examples: 1-3,5 or
+            21-40.'
+          maxLength: 255
+          default: all
+        exports:
+          type: array
+          items:
+            type: string
+            enum:
+            - txt
+            - docx
+            - markdown
+            - html
+            - zip
+          default:
+          - txt
+          - docx
+          description: Send as exports[] or indexed multipart fields. Omission selects defaults; an explicit
+            empty array does not. Generic repeated exports fields may not bind as an array.
+      required:
+      - file
+    ZetaSegment:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Trimmed nonempty text; limits from GET /services.
+          minLength: 1
+        language:
+          type: string
+          enum:
+          - ckb
+          - ar
+          - en
+        pause_after_ms:
+          type: integer
+          description: Final segment pause is normalized to zero.
+          enum:
+          - 0
+          - 500
+          - 1000
+          - 2000
+        voice:
+          type: string
+          description: Allowed GET /voices ID.
+      required:
+      - text
+      - language
+      - pause_after_ms
+      - voice
+      additionalProperties: false
+    ThetaSegment:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Trimmed nonempty text; limits from GET /services.
+          minLength: 1
+        language:
+          type: string
+          enum:
+          - ckb
+          - ar
+          - en
+        pause_after_ms:
+          type: integer
+          description: Final segment pause is normalized to zero.
+          enum:
+          - 0
+          - 500
+          - 1000
+          - 2000
+        reference_id:
+          type: integer
+          description: Owned reference ID.
+          minimum: 1
+        reference_text:
+          type:
+          - string
+          - 'null'
+          maxLength: 4000
+          description: Optional reference transcript.
+      required:
+      - text
+      - language
+      - pause_after_ms
+      - reference_id
+      additionalProperties: false
+    ZetaRequest:
+      type: object
+      properties:
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/ZetaSegment'
+          minItems: 1
+          description: Ordered segments. Discover current maximum count/character limits through GET /services.
+        storage_mode:
+          type: string
+          description: Generation output storage policy. Saved references retain their own policy.
+          enum:
+          - temporary
+          - permanent
+          default: temporary
+      required:
+      - segments
+      additionalProperties: false
+    ThetaRequest:
+      type: object
+      properties:
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThetaSegment'
+          minItems: 1
+          description: Ordered segments. Discover current maximum count/character limits through GET /services.
+        storage_mode:
+          type: string
+          description: Generation output storage policy. Saved references retain their own policy.
+          enum:
+          - temporary
+          - permanent
+          default: temporary
+      required:
+      - segments
+      additionalProperties: false
+    HarakatRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Nonempty UTF-8 text. Trimmed; max_chars from GET /services.
+          minLength: 1
+        storage_mode:
+          type: string
+          description: Generation output storage policy. Saved references retain their own policy.
+          enum:
+          - temporary
+          - permanent
+          default: temporary
+      required:
+      - text
+      additionalProperties: false
+    ReferenceUpload:
+      type: object
+      properties:
+        file:
+          type: string
+          description: Reference audio up to 20 MiB; FLAC excluded. This upload uses storage quota.
+          format: binary
+      required:
+      - file
+      additionalProperties: false
+    Reference:
+      type: object
+      properties:
+        reference_id:
+          type: integer
+          minimum: 1
+        mime_type:
+          type: string
+        size_bytes:
+          type: integer
+          minimum: 0
+        expires_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - reference_id
+      - mime_type
+      - size_bytes
+      - expires_at
+    ErrorDetail:
+      type: object
+      properties:
+        code:
+          type: string
+          enum:
+          - invalid_request
+          - authentication_failed
+          - permission_denied
+          - insufficient_credits
+          - rate_limit_exceeded
+          - invalid_file
+          - unsupported_format
+          - job_not_found
+          - file_not_found
+          - processing_failed
+          - storage_limit_exceeded
+          - server_error
+          - idempotency_conflict
+          - concurrency_limit_exceeded
+        message:
+          type: string
+        fields:
+          type: array
+          items:
+            type: string
+      required:
+      - code
+      - message
+    Error:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+      required:
+      - error
+    ResultFile:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Opaque public file ID.
+        kind:
+          type: string
+          description: Role label; not a closed enum.
+        mime_type:
+          type: string
+        size_bytes:
+          type: integer
+          minimum: 0
+        expires_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        download_url:
+          type: string
+          description: Requires Bearer authentication. Validate the origin before sending credentials.
+          format: uri
+      required:
+      - id
+      - kind
+      - mime_type
+      - size_bytes
+      - expires_at
+      - download_url
+    CaptionSegment:
+      type: object
+      properties:
+        start:
+          description: Start time, normally seconds, when present. Value type is not normalized; parse
+            defensively.
+        end:
+          description: End time, normally seconds, when present. Value type is not normalized; parse defensively.
+        text:
+          description: Caption text when present. Value type is not normalized; parse defensively.
+      additionalProperties: false
+    Result:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultFile'
+        expired:
+          type: boolean
+          const: true
+        text:
+          type: string
+          description: Leo/Caption/OCR, or Harakat while files are available.
+        srt:
+          type:
+          - string
+          - 'null'
+          description: Caption only.
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/CaptionSegment'
+          description: Caption only; fields are present when persisted.
+        segment_count:
+          type: integer
+          description: Zeta/Theta only.
+        total_chars:
+          type: integer
+          description: Zeta/Theta only.
+        duration:
+          type: number
+          minimum: 0
+          description: Zeta/Theta final audio duration in seconds.
+        characters:
+          type: integer
+          description: Harakat only, while files are available.
+        words:
+          type: integer
+          description: Harakat only, while files are available.
+        lines:
+          type: integer
+          description: Harakat only, while files are available.
+        chunks:
+          type: integer
+          description: Harakat only, while files are available.
+      required:
+      - files
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Opaque public job ID.
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        service:
+          type: string
+          enum:
+          - speech
+          - voice-clone
+          - transcriptions
+          - captions
+          - ocr
+          - stem
+          - zeta
+          - theta
+          - harakat
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        expires_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        result:
+          anyOf:
+          - $ref: '#/components/schemas/Result'
+          - type: 'null'
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+      required:
+      - id
+      - status
+      - service
+      - created_at
+      - completed_at
+      - expires_at
+      - result
+      description: Same envelope for submit/replay/read. result is null unless completed; failed jobs
+        include error. Expired completed results contain only expired:true and files:[].
+      allOf:
+      - if:
+          properties:
+            status:
+              const: failed
+        then:
+          required:
+          - error
+          properties:
+            error:
+              properties:
+                code:
+                  enum:
+                  - processing_failed
+                  - storage_limit_exceeded
+                  - insufficient_credits
+    Voices:
+      type: object
+      properties:
+        voices:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+            required:
+            - id
+            - name
+      required:
+      - voices
+    BatchLimits:
+      type: object
+      properties:
+        max_segments:
+          type: integer
+        max_segment_chars:
+          type: integer
+        max_total_chars:
+          type: integer
+        languages:
+          type: array
+          items:
+            type: string
+            enum:
+            - ckb
+            - ar
+            - en
+        pause_after_ms:
+          type: array
+          items:
+            type: integer
+            enum:
+            - 0
+            - 500
+            - 1000
+            - 2000
+        final_pause_ms:
+          type: integer
+          const: 0
+      required:
+      - max_segments
+      - max_segment_chars
+      - max_total_chars
+      - languages
+      - pause_after_ms
+      - final_pause_ms
+    ThetaLimits:
+      allOf:
+      - $ref: '#/components/schemas/BatchLimits'
+      - type: object
+        properties:
+          max_reference_bytes:
+            type: integer
+          max_project_reference_bytes:
+            type: integer
+        required:
+        - max_reference_bytes
+        - max_project_reference_bytes
+    Services:
+      type: object
+      properties:
+        services:
+          type: array
+          items:
+            type: string
+            enum:
+            - speech
+            - voice-clone
+            - transcriptions
+            - captions
+            - ocr
+            - stem
+            - zeta
+            - theta
+            - harakat
+        speech_models:
+          type: array
+          items:
+            type: string
+            enum:
+            - '1.5'
+            - '2.0'
+        stem_modes:
+          type: array
+          items:
+            type: integer
+            enum:
+            - 2
+            - 4
+        service_details:
+          type: object
+          properties:
+            zeta:
+              type: object
+              properties:
+                name:
+                  type: string
+                  const: Zeta 1.0
+                endpoint:
+                  type: string
+                  const: /api/v2/zeta
+                scope:
+                  type: string
+                  const: v2:speech
+                billing_unit:
+                  type: string
+                  const: character
+                limits:
+                  $ref: '#/components/schemas/BatchLimits'
+              required:
+              - name
+              - endpoint
+              - scope
+              - billing_unit
+              - limits
+            theta:
+              type: object
+              properties:
+                name:
+                  type: string
+                  const: Theta 1.0
+                endpoint:
+                  type: string
+                  const: /api/v2/theta
+                scope:
+                  type: string
+                  const: v2:voice-clone
+                billing_unit:
+                  type: string
+                  const: character
+                limits:
+                  $ref: '#/components/schemas/ThetaLimits'
+                reference_upload_endpoint:
+                  type: string
+                  const: /api/v2/references
+              required:
+              - name
+              - endpoint
+              - scope
+              - billing_unit
+              - limits
+              - reference_upload_endpoint
+            harakat:
+              type: object
+              properties:
+                name:
+                  type: string
+                  const: Harakat 1.0
+                endpoint:
+                  type: string
+                  const: /api/v2/harakat
+                scope:
+                  type: string
+                  const: v2:harakat
+                billing_unit:
+                  type: string
+                  const: character
+                limits:
+                  type: object
+                  properties:
+                    max_chars:
+                      type: integer
+                      minimum: 1
+                  required:
+                  - max_chars
+              required:
+              - name
+              - endpoint
+              - scope
+              - billing_unit
+              - limits
+          required:
+          - zeta
+          - theta
+          - harakat
+      required:
+      - services
+      - speech_models
+      - stem_modes
+      - service_details

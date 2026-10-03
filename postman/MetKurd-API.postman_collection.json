@@ -1,0 +1,1052 @@
+{
+  "info": {
+    "name": "MetKurd REST API V2",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Official public API examples. All identifiers/credentials are placeholders. Keep keys local. Generation requests are billable and require explicit idempotency identities. No automatic run loop."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{api_key}}",
+        "type": "string"
+      }
+    ]
+  },
+  "protocolProfileBehavior": {
+    "followRedirects": false
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://metkurd.ai/api/v2",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "YOUR_API_KEY",
+      "type": "string"
+    },
+    {
+      "key": "idempotency_key",
+      "value": "YOUR_UNIQUE_REQUEST_ID",
+      "type": "string"
+    },
+    {
+      "key": "job_id",
+      "value": "JOB_ID",
+      "type": "string"
+    },
+    {
+      "key": "file_id",
+      "value": "FILE_ID",
+      "type": "string"
+    },
+    {
+      "key": "voice_id",
+      "value": "VOICE_ID",
+      "type": "string"
+    },
+    {
+      "key": "reference_id",
+      "value": "REFERENCE_ID",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Getting Started",
+      "description": "Set api_key locally. Start with services/voices. Generation consumes credits. Choose a fresh idempotency_key for each new logical job; preserve it for retries. Do not run the entire collection unattended.",
+      "item": [
+        {
+          "name": "Discover services",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/services",
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "01 - Discovery / Voices",
+      "item": [
+        {
+          "name": "Discover allowed voice IDs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/voices",
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 - Speech / Apollo",
+      "item": [
+        {
+          "name": "Submit speech",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/speech",
+            "description": "Follow with Jobs → Read job. Choose a new idempotency key for a new logical request. Supply actual discovered/uploaded IDs and local files. No automatic polling or blind submission retry.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"سڵاو لە مێتکوردەوە\",\n  \"voice\": \"{{voice_id}}\",\n  \"model\": \"2.0\",\n  \"language\": \"ckb\",\n  \"storage_mode\": \"temporary\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const key = pm.variables.get(\"idempotency_key\");",
+                  "if (!key || key === \"YOUR_UNIQUE_REQUEST_ID\") {",
+                  "  throw new Error(\"Set idempotency_key before sending. Keep it for retries; change it only for a NEW logical job.\");",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 202].includes(pm.response.code)) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Job response contains id and status\", () => {",
+                  "    pm.expect(body.id).to.be.a(\"string\");",
+                  "    pm.expect(body.status).to.be.oneOf([\"queued\", \"processing\", \"completed\", \"failed\", \"cancelled\"]);",
+                  "  });",
+                  "  if (body.id) pm.collectionVariables.set(\"job_id\", body.id);",
+                  "  pm.collectionVariables.set(\"file_id\", \"FILE_ID\");",
+                  "  if (body.status === \"completed\" && !body.result?.expired && body.result?.files?.length) {",
+                  "    pm.collectionVariables.set(\"file_id\", body.result.files[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Voice Clone / Vector",
+      "item": [
+        {
+          "name": "Submit voice-clone",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": "{{base_url}}/voice-clone",
+            "description": "Follow with Jobs → Read job. Choose a new idempotency key for a new logical request. Supply actual discovered/uploaded IDs and local files. No automatic polling or blind submission retry.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Choose your own local upload."
+                },
+                {
+                  "key": "text",
+                  "value": "سڵاو لە مێتکوردەوە",
+                  "type": "text"
+                },
+                {
+                  "key": "model",
+                  "value": "2.0",
+                  "type": "text"
+                },
+                {
+                  "key": "language",
+                  "value": "ckb",
+                  "type": "text"
+                },
+                {
+                  "key": "storage_mode",
+                  "value": "temporary",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const key = pm.variables.get(\"idempotency_key\");",
+                  "if (!key || key === \"YOUR_UNIQUE_REQUEST_ID\") {",
+                  "  throw new Error(\"Set idempotency_key before sending. Keep it for retries; change it only for a NEW logical job.\");",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 202].includes(pm.response.code)) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Job response contains id and status\", () => {",
+                  "    pm.expect(body.id).to.be.a(\"string\");",
+                  "    pm.expect(body.status).to.be.oneOf([\"queued\", \"processing\", \"completed\", \"failed\", \"cancelled\"]);",
+                  "  });",
+                  "  if (body.id) pm.collectionVariables.set(\"job_id\", body.id);",
+                  "  pm.collectionVariables.set(\"file_id\", \"FILE_ID\");",
+                  "  if (body.status === \"completed\" && !body.result?.expired && body.result?.files?.length) {",
+                  "    pm.collectionVariables.set(\"file_id\", body.result.files[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Submit clone with saved reference",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/voice-clone",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"سڵاو لە مێتکوردەوە\",\n  \"model\": \"2.0\",\n  \"language\": \"ckb\",\n  \"storage_mode\": \"temporary\",\n  \"reference_id\": {{reference_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const key = pm.variables.get(\"idempotency_key\");",
+                  "if (!key || key === \"YOUR_UNIQUE_REQUEST_ID\") {",
+                  "  throw new Error(\"Set idempotency_key before sending. Keep it for retries; change it only for a NEW logical job.\");",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 202].includes(pm.response.code)) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Job response contains id and status\", () => {",
+                  "    pm.expect(body.id).to.be.a(\"string\");",
+                  "    pm.expect(body.status).to.be.oneOf([\"queued\", \"processing\", \"completed\", \"failed\", \"cancelled\"]);",
+                  "  });",
+                  "  if (body.id) pm.collectionVariables.set(\"job_id\", body.id);",
+                  "  pm.collectionVariables.set(\"file_id\", \"FILE_ID\");",
+                  "  if (body.status === \"completed\" && !body.result?.expired && body.result?.files?.length) {",
+                  "    pm.collectionVariables.set(\"file_id\", body.result.files[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Multi-Speaker",
+      "item": [
+        {
+          "name": "Submit zeta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/zeta",
+            "description": "Follow with Jobs → Read job. Choose a new idempotency key for a new logical request. Supply actual discovered/uploaded IDs and local files. No automatic polling or blind submission retry.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"segments\": [\n    {\n      \"text\": \"سڵاو\",\n      \"voice\": \"{{voice_id}}\",\n      \"language\": \"ckb\",\n      \"pause_after_ms\": 500\n    },\n    {\n      \"text\": \"بەخێربێن\",\n      \"voice\": \"{{voice_id}}\",\n      \"language\": \"ckb\",\n      \"pause_after_ms\": 0\n    }\n  ],\n  \"storage_mode\": \"temporary\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const key = pm.variables.get(\"idempotency_key\");",
+                  "if (!key || key === \"YOUR_UNIQUE_REQUEST_ID\") {",
+                  "  throw new Error(\"Set idempotency_key before sending. Keep it for retries; change it only for a NEW logical job.\");",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 202].includes(pm.response.code)) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Job response contains id and status\", () => {",
+                  "    pm.expect(body.id).to.be.a(\"string\");",
+                  "    pm.expect(body.status).to.be.oneOf([\"queued\", \"processing\", \"completed\", \"failed\", \"cancelled\"]);",
+                  "  });",
+                  "  if (body.id) pm.collectionVariables.set(\"job_id\", body.id);",
+                  "  pm.collectionVariables.set(\"file_id\", \"FILE_ID\");",
+                  "  if (body.status === \"completed\" && !body.result?.expired && body.result?.files?.length) {",
+                  "    pm.collectionVariables.set(\"file_id\", body.result.files[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload reusable reference",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/references",
+            "description": "Requires Theta entitlement and clone scope. Only file. Returns 201 reference metadata, uses storage quota, no generation job or Idempotency-Key.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Choose your own local upload."
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Reference ID is numeric\", () => pm.expect(body.reference_id).to.be.a(\"number\"));",
+                  "  pm.collectionVariables.set(\"reference_id\", String(body.reference_id));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Submit theta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/theta",
+            "description": "Follow with Jobs → Read job. Choose a new idempotency key for a new logical request. Supply actual discovered/uploaded IDs and local files. No automatic polling or blind submission retry.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"segments\": [\n    {\n      \"text\": \"سڵاو\",\n      \"reference_id\": {{reference_id}},\n      \"language\": \"ckb\",\n      \"pause_after_ms\": 0\n    }\n  ],\n  \"storage_mode\": \"temporary\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const key = pm.variables.get(\"idempotency_key\");",
+                  "if (!key || key === \"YOUR_UNIQUE_REQUEST_ID\") {",
+                  "  throw new Error(\"Set idempotency_key before sending. Keep it for retries; change it only for a NEW logical job.\");",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 202].includes(pm.response.code)) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Job response contains id and status\", () => {",
+                  "    pm.expect(body.id).to.be.a(\"string\");",
+                  "    pm.expect(body.status).to.be.oneOf([\"queued\", \"processing\", \"completed\", \"failed\", \"cancelled\"]);",
+                  "  });",
+                  "  if (body.id) pm.collectionVariables.set(\"job_id\", body.id);",
+                  "  pm.collectionVariables.set(\"file_id\", \"FILE_ID\");",
+                  "  if (body.status === \"completed\" && !body.result?.expired && body.result?.files?.length) {",
+                  "    pm.collectionVariables.set(\"file_id\", body.result.files[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - Speech-to-Text",
+      "item": [
+        {
+          "name": "Submit transcriptions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": "{{base_url}}/transcriptions",
+            "description": "Follow with Jobs → Read job. Choose a new idempotency key for a new logical request. Supply actual discovered/uploaded IDs and local files. No automatic polling or blind submission retry.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Choose your own local upload."
+                },
+                {
+                  "key": "language",
+                  "value": "ckb",
+                  "type": "text"
+                },
+                {
+                  "key": "intelligent",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "storage_mode",
+                  "value": "temporary",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const key = pm.variables.get(\"idempotency_key\");",
+                  "if (!key || key === \"YOUR_UNIQUE_REQUEST_ID\") {",
+                  "  throw new Error(\"Set idempotency_key before sending. Keep it for retries; change it only for a NEW logical job.\");",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 202].includes(pm.response.code)) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Job response contains id and status\", () => {",
+                  "    pm.expect(body.id).to.be.a(\"string\");",
+                  "    pm.expect(body.status).to.be.oneOf([\"queued\", \"processing\", \"completed\", \"failed\", \"cancelled\"]);",
+                  "  });",
+                  "  if (body.id) pm.collectionVariables.set(\"job_id\", body.id);",
+                  "  pm.collectionVariables.set(\"file_id\", \"FILE_ID\");",
+                  "  if (body.status === \"completed\" && !body.result?.expired && body.result?.files?.length) {",
+                  "    pm.collectionVariables.set(\"file_id\", body.result.files[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - Caption",
+      "item": [
+        {
+          "name": "Submit captions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": "{{base_url}}/captions",
+            "description": "Follow with Jobs → Read job. Choose a new idempotency key for a new logical request. Supply actual discovered/uploaded IDs and local files. No automatic polling or blind submission retry.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Choose your own local upload."
+                },
+                {
+                  "key": "language",
+                  "value": "ckb",
+                  "type": "text"
+                },
+                {
+                  "key": "intelligent",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "storage_mode",
+                  "value": "temporary",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const key = pm.variables.get(\"idempotency_key\");",
+                  "if (!key || key === \"YOUR_UNIQUE_REQUEST_ID\") {",
+                  "  throw new Error(\"Set idempotency_key before sending. Keep it for retries; change it only for a NEW logical job.\");",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 202].includes(pm.response.code)) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Job response contains id and status\", () => {",
+                  "    pm.expect(body.id).to.be.a(\"string\");",
+                  "    pm.expect(body.status).to.be.oneOf([\"queued\", \"processing\", \"completed\", \"failed\", \"cancelled\"]);",
+                  "  });",
+                  "  if (body.id) pm.collectionVariables.set(\"job_id\", body.id);",
+                  "  pm.collectionVariables.set(\"file_id\", \"FILE_ID\");",
+                  "  if (body.status === \"completed\" && !body.result?.expired && body.result?.files?.length) {",
+                  "    pm.collectionVariables.set(\"file_id\", body.result.files[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 - OCR",
+      "item": [
+        {
+          "name": "Submit ocr",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": "{{base_url}}/ocr",
+            "description": "Follow with Jobs → Read job. Choose a new idempotency key for a new logical request. Supply actual discovered/uploaded IDs and local files. No automatic polling or blind submission retry.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Choose your own local upload."
+                },
+                {
+                  "key": "pages",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "exports[]",
+                  "value": "txt",
+                  "type": "text"
+                },
+                {
+                  "key": "exports[]",
+                  "value": "docx",
+                  "type": "text"
+                },
+                {
+                  "key": "intelligent",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "storage_mode",
+                  "value": "temporary",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const key = pm.variables.get(\"idempotency_key\");",
+                  "if (!key || key === \"YOUR_UNIQUE_REQUEST_ID\") {",
+                  "  throw new Error(\"Set idempotency_key before sending. Keep it for retries; change it only for a NEW logical job.\");",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 202].includes(pm.response.code)) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Job response contains id and status\", () => {",
+                  "    pm.expect(body.id).to.be.a(\"string\");",
+                  "    pm.expect(body.status).to.be.oneOf([\"queued\", \"processing\", \"completed\", \"failed\", \"cancelled\"]);",
+                  "  });",
+                  "  if (body.id) pm.collectionVariables.set(\"job_id\", body.id);",
+                  "  pm.collectionVariables.set(\"file_id\", \"FILE_ID\");",
+                  "  if (body.status === \"completed\" && !body.result?.expired && body.result?.files?.length) {",
+                  "    pm.collectionVariables.set(\"file_id\", body.result.files[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 - Harakat",
+      "item": [
+        {
+          "name": "Submit harakat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/harakat",
+            "description": "Follow with Jobs → Read job. Choose a new idempotency key for a new logical request. Supply actual discovered/uploaded IDs and local files. No automatic polling or blind submission retry.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"مرحبا بكم\",\n  \"storage_mode\": \"temporary\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const key = pm.variables.get(\"idempotency_key\");",
+                  "if (!key || key === \"YOUR_UNIQUE_REQUEST_ID\") {",
+                  "  throw new Error(\"Set idempotency_key before sending. Keep it for retries; change it only for a NEW logical job.\");",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 202].includes(pm.response.code)) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Job response contains id and status\", () => {",
+                  "    pm.expect(body.id).to.be.a(\"string\");",
+                  "    pm.expect(body.status).to.be.oneOf([\"queued\", \"processing\", \"completed\", \"failed\", \"cancelled\"]);",
+                  "  });",
+                  "  if (body.id) pm.collectionVariables.set(\"job_id\", body.id);",
+                  "  pm.collectionVariables.set(\"file_id\", \"FILE_ID\");",
+                  "  if (body.status === \"completed\" && !body.result?.expired && body.result?.files?.length) {",
+                  "    pm.collectionVariables.set(\"file_id\", body.result.files[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "09 - STEM",
+      "item": [
+        {
+          "name": "Submit STEM 2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": "{{base_url}}/stem",
+            "description": "Follow with Jobs → Read job. Choose a new idempotency key for a new logical request. Supply actual discovered/uploaded IDs and local files. No automatic polling or blind submission retry.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Choose your own local upload."
+                },
+                {
+                  "key": "mode",
+                  "value": "2",
+                  "type": "text"
+                },
+                {
+                  "key": "storage_mode",
+                  "value": "temporary",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const key = pm.variables.get(\"idempotency_key\");",
+                  "if (!key || key === \"YOUR_UNIQUE_REQUEST_ID\") {",
+                  "  throw new Error(\"Set idempotency_key before sending. Keep it for retries; change it only for a NEW logical job.\");",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 202].includes(pm.response.code)) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Job response contains id and status\", () => {",
+                  "    pm.expect(body.id).to.be.a(\"string\");",
+                  "    pm.expect(body.status).to.be.oneOf([\"queued\", \"processing\", \"completed\", \"failed\", \"cancelled\"]);",
+                  "  });",
+                  "  if (body.id) pm.collectionVariables.set(\"job_id\", body.id);",
+                  "  pm.collectionVariables.set(\"file_id\", \"FILE_ID\");",
+                  "  if (body.status === \"completed\" && !body.result?.expired && body.result?.files?.length) {",
+                  "    pm.collectionVariables.set(\"file_id\", body.result.files[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Submit STEM 4",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": "{{base_url}}/stem",
+            "description": "",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Choose your own local upload."
+                },
+                {
+                  "key": "mode",
+                  "value": "4",
+                  "type": "text"
+                },
+                {
+                  "key": "storage_mode",
+                  "value": "temporary",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const key = pm.variables.get(\"idempotency_key\");",
+                  "if (!key || key === \"YOUR_UNIQUE_REQUEST_ID\") {",
+                  "  throw new Error(\"Set idempotency_key before sending. Keep it for retries; change it only for a NEW logical job.\");",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 202].includes(pm.response.code)) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Job response contains id and status\", () => {",
+                  "    pm.expect(body.id).to.be.a(\"string\");",
+                  "    pm.expect(body.status).to.be.oneOf([\"queued\", \"processing\", \"completed\", \"failed\", \"cancelled\"]);",
+                  "  });",
+                  "  if (body.id) pm.collectionVariables.set(\"job_id\", body.id);",
+                  "  pm.collectionVariables.set(\"file_id\", \"FILE_ID\");",
+                  "  if (body.status === \"completed\" && !body.result?.expired && body.result?.files?.length) {",
+                  "    pm.collectionVariables.set(\"file_id\", body.result.files[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10 - Jobs",
+      "item": [
+        {
+          "name": "Read job",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/jobs/{{job_id}}",
+            "description": "Read about every ten seconds. Stop at completed/failed/cancelled. Captures the first file ID only for an available completed result."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 202].includes(pm.response.code)) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Job response contains id and status\", () => {",
+                  "    pm.expect(body.id).to.be.a(\"string\");",
+                  "    pm.expect(body.status).to.be.oneOf([\"queued\", \"processing\", \"completed\", \"failed\", \"cancelled\"]);",
+                  "  });",
+                  "  if (body.id) pm.collectionVariables.set(\"job_id\", body.id);",
+                  "  pm.collectionVariables.set(\"file_id\", \"FILE_ID\");",
+                  "  if (body.status === \"completed\" && !body.result?.expired && body.result?.files?.length) {",
+                  "    pm.collectionVariables.set(\"file_id\", body.result.files[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "11 - Files",
+      "item": [
+        {
+          "name": "Download result",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/files/{{file_id}}/download",
+            "description": "Bearer authentication is inherited. Use Send and Download. The file may have expired; a browser without the header cannot open it. No redirects are needed."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+# MetKurd REST API V2
+
+> Kurdish-focused AI APIs for speech, voice cloning, transcription, captions, OCR,
+> diacritization, multi-speaker audio and audio separation.
+
+Official website: https://metkurd.ai
+API base: https://metkurd.ai/api/v2
+An account and eligible active plan/API access are required. Use Bearer authentication
+on all requests. Keep keys server-side. Generation is asynchronous: POST with an
+Idempotency-Key, save the job ID, read status, then authenticate result downloads.
+
+Repository documentation and sample code are licensed under Apache-2.0. This does
+not cover the hosted MetKurd API service, models, customer data or generated outputs.
+OpenAPI describes recommended functional fields; use string model values "1.5" and "2.0".
+
+## Canonical documentation
+
+- [Overview and quick start](README.md)
+- [OpenAPI 3.1](openapi.yaml)
+- [Agent rules](AGENTS.md)
+- [Authentication and scopes](docs/authentication.md)
+- [Idempotency](docs/idempotency.md)
+- [Job lifecycle](docs/job-lifecycle.md)
+- [Files and downloads](docs/files-and-downloads.md)
+- [Storage and retention](docs/storage-and-retention.md)
+- [Errors](docs/errors.md)
+- [Voices](docs/voices.md)
+- [Speech](docs/services/speech.md)
+- [Voice clone](docs/services/voice-clone.md)
+- [Zeta and Theta](docs/services/multi-speaker.md)
+- [Speech-to-text](docs/services/speech-to-text.md)
+- [Caption](docs/services/caption.md)
+- [OCR](docs/services/ocr.md)
+- [Harakat](docs/services/harakat.md)
+- [STEM](docs/services/stem.md)
+- [Contract caveats](docs/contract-notes.md)
+- [Examples](examples/README.md)
+- [Apache-2.0 license](LICENSE)
+- [Security and private vulnerability reporting](SECURITY.md)

@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+*.local.json
+*.postman_environment.json
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+vendor/
+downloads/
+result.*
+job-response.json
+.DS_Store
+Thumbs.db
